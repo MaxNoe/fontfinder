@@ -18,6 +18,9 @@ def query_font_database(name=None, **kwargs):
     if name is not None:
         query += f'{name}'
 
+    if not kwargs:
+        kwargs['style'] = 'Regular'
+
     for prop, value in kwargs.items():
         query += f':{prop}={value}'
 
@@ -31,7 +34,7 @@ def query_font_database(name=None, **kwargs):
     call.extend(PROPERTIES)
     output = sp.check_output(call).decode()
 
-    return list(map(parse_font_line, output.splitlines()))
+    return sort_fonts((map(parse_font_line, output.splitlines())))
 
 
 def parse_font_line(line):
@@ -50,8 +53,9 @@ def parse_font_line(line):
 
 def sort_key(font):
     return (
-        font['name'],
         font['family'],
+        len(font['style']),
+        font['fullname'],
         font['fontversion'],
     )
 
