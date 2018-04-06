@@ -1,12 +1,8 @@
-import subprocess as sp
+from .fontconfig import has_fontconfig, query_fontconfig_database
 
-from .fontconfig import query_font_database
+__all__ = ['find_font', 'query_fontconfig_database']
 
-__all__ = ['find_font', 'query_font_database']
-
-try:
-    sp.check_output(['which', 'fc-list'])
-except sp.CalledProcessError:
+if not has_fontconfig():
     raise OSError(
         'This module currently only supports systems using "fontconfig"'
     )
@@ -14,7 +10,7 @@ except sp.CalledProcessError:
 
 def find_font(name, **kwargs):
     try:
-        return query_font_database(name, **kwargs)[0]['file']
+        return query_fontconfig_database(name, **kwargs)[0]['file']
     except IndexError:
         query = ','.join(f'{k}={v}' for k, v in kwargs.items())
         if query:

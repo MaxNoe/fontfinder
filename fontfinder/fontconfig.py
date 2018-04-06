@@ -1,4 +1,5 @@
 import subprocess as sp
+import warnings
 
 PROPERTIES = {
     'file': str,
@@ -13,13 +14,51 @@ PROPERTIES = {
 }
 
 
-def query_font_database(name=None, **kwargs):
-    query = ''
-    if name is not None:
-        query += f'{name}'
+def has_fontconfig():
+    result = sp.run(['which', 'fc-list'], stdout=sp.PIPE, stderr=sp.PIPE)
+    return result.returncode == 0
 
-    if not kwargs:
-        kwargs['style'] = 'Regular'
+
+def query_fontconfig_database(
+    family=None,
+    style=None,
+    weight=None,
+    slant=None,
+    **kwargs
+):
+    '''
+    Query the fontconfig database.
+    This is a thin wrapper around `fc-list`.
+
+    Parameters
+    ----------
+    family: str
+        Search for fonts of this family
+    style: str
+        Filter by style, e.g. 'Bold Italic'
+    weight: str or int
+        Filter by weight, which can be a string, e.g. "Thin", "Bold" or
+        the integer weight.
+    slant: str
+        'roman', 'italic' or 'oblique'
+    **kwargs:
+        Filter by other font properties, see `man fc-list` for details.
+    '''
+    query = ''
+    if family is not None:
+        query += f'{family}'
+
+    if style is not None and (weight is not None or slant is not None):
+        warnings.warn('`style` will override `weight` and `slant`')
+
+    if style:
+        kwargs['style'] = style
+
+    if weight:
+        kwargs['weight'] = weight
+
+    if slant:
+        kwargs['slant'] = slant
 
     for prop, value in kwargs.items():
         query += f':{prop}={value}'
@@ -33,11 +72,12 @@ def query_font_database(name=None, **kwargs):
     ]
     call.extend(PROPERTIES)
     output = sp.check_output(call).decode()
+    lines = output.splitlines()
 
-    return sort_fonts((map(parse_font_line, output.splitlines())))
+    return _sort_fonts(map(_parse_font_line, lines))
 
 
-def parse_font_line(line):
+def _parse_font_line(line):
     properties = list(map(str.strip, line.split(':')))
 
     d = {'file': properties[0]}
@@ -51,14 +91,15 @@ def parse_font_line(line):
     return d
 
 
-def sort_key(font):
+def _sort_key(font):
     return (
         font['family'],
+        'Regular' not in font['style'] and 'Book' not in font['style'],
         len(font['style']),
         font['fullname'],
-        font['fontversion'],
+        -font['fontversion'],
     )
 
 
-def sort_fonts(fonts):
-    return sorted(fonts, key=sort_key)
+def _sort_fonts(fonts):
+    return sorted(fonts, key=_sort_key)
