@@ -6,4 +6,6 @@ setup(
     author='Maximilian Nöthe',
     author_email='maximilian.noethe@tu-dortmund.de',
     packages=find_packages(),
+    tests_require=['pytest'],
+    setup_requires=['pytest-runner'],
 )

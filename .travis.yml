@@ -1,0 +1,17 @@
+language: python
+
+python:
+  - "3.6"
+
+before_install:
+  - pip install --upgrade pip
+  - sudo apt-get -qq update
+  - sudo apt-get install -y fontconfig ttf-dejavu fonts-droid
+
+install:
+  - pip install pyflakes
+  - pip install .
+
+script:
+  - pyflakes fontfinder
+  - python setup.py test
