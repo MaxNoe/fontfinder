@@ -96,6 +96,7 @@ def _sort_key(font):
         font['family'],
         'Regular' not in font['style'] and 'Book' not in font['style'],
         len(font['style']),
+        len(font['fullname']),
         font['fullname'],
         -font['fontversion'],
     )
